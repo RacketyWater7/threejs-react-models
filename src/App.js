@@ -1,4 +1,4 @@
-import { Suspense, useRef, useEffect } from "react";
+import { Suspense, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 // import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 // import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -6,11 +6,13 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { proxy, useSnapshot } from "valtio";
 import { useGLTF, useAnimations, OrbitControls } from "@react-three/drei";
 import { HexColorPicker } from "react-colorful";
+import { BsChatRightDotsFill } from "react-icons/bs";
+import ChatBox from "./components/ChatBox/ChatBox";
 
 const state = proxy({
   current: null,
   items: {
-    shirtColor: "Green",
+    shirtColor: "Brown",
     Logo: "/",
   },
 });
@@ -19,6 +21,7 @@ function Model({ ...props }) {
   const group = useRef();
   const { nodes, materials, animations } = useGLTF("/models/panda.gltf");
   const snap = useSnapshot(state);
+  const { playAnimation } = props;
 
   useEffect(() => {
     // console.log(
@@ -30,7 +33,7 @@ function Model({ ...props }) {
     //   nodes
     // );
     if (materials) {
-      materials["Logo"].map = new THREE.TextureLoader().load("USKTLogo.png");
+      // materials["Logo"].map = new THREE.TextureLoader().load("USKTLogo.png");
     }
   }, [materials]);
 
@@ -38,8 +41,10 @@ function Model({ ...props }) {
   // animate the model with the animations
   useEffect(() => {
     const action = actions[Object.keys(actions)[0]];
-    action.play();
-  }, [actions]);
+    if (playAnimation) {
+      action.play();
+    }
+  }, [actions, playAnimation]);
 
   // const [hovered, set] = useState(null);
   // useEffect(() => {
@@ -73,7 +78,7 @@ function Model({ ...props }) {
         state.current = e.object.material.name;
         if (e.object.material.name === "Logo") {
           // change the logo
-          e.object.material.map = new THREE.TextureLoader().load("logo192.png");
+          // e.object.material.map = new THREE.TextureLoader().load("logo192.png");
         }
       }}
       onPointerMissed={(e) => {
@@ -209,16 +214,47 @@ function ColorPicker() {
 }
 useGLTF.preload("/models/panda.gltf");
 export default function App() {
+  const [playAnimation, setPlayAnimation] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+
   return (
-    <div style={{ position: "relative" }}>
+    <div
+      style={{
+        position: "relative",
+        width: "100vw",
+        height: "100vh",
+      }}
+    >
+      {/* make a chatbox */}
+      {showChat && (
+        <ChatBox
+          closeChat={() => setShowChat(false)}
+          setPlayAnimation={() => setPlayAnimation(!playAnimation)}
+        />
+      )}{" "}
+      {!showChat && (
+        <BsChatRightDotsFill
+          style={{
+            position: "absolute",
+            right: "300px",
+            bottom: "100px",
+            fontSize: "50px",
+            cursor: "pointer",
+          }}
+          onClick={() => setShowChat(true)}
+        />
+      )}
       <Canvas
         style={{
-          width: "100vw",
-          height: "100vh",
-          background: "#171717",
+          width: "300px",
+          height: "300px",
+          background: "transparent",
+          position: "absolute",
+          bottom: "-90px",
+          right: "30px",
         }}
       >
-        <gridHelper argrs={[100, 100]} />
+        {/* <gridHelper argrs={[100, 100]} /> */}
         <hemisphereLight intensity={0.5} />
         <ambientLight intensity={1} />
         <spotLight
@@ -230,13 +266,13 @@ export default function App() {
         />
 
         <Suspense fallback={null}>
-          <Model />
+          <Model playAnimation={playAnimation} />
         </Suspense>
-        <OrbitControls />
+        {/* <OrbitControls /> */}
       </Canvas>
-      <div style={{ position: "absolute", top: "10px", left: "10px" }}>
+      {/* <div style={{ position: "absolute", top: "10px", left: "10px" }}>
         <ColorPicker />
-      </div>
+      </div> */}
     </div>
   );
 }
